@@ -1,32 +1,51 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
+  
   const { nama, type } = req.query
   if (!nama) return res.status(400).json({ error: 'nama required' })
 
+  const owner = process.env.GITHUB_OWNER
+  const repo = process.env.GITHUB_REPO
+  const token = process.env.GITHUB_TOKEN
   const nama_upper = nama.toUpperCase()
   const prefix = type === 'pengurus' ? 'pengurus' : 'anggota'
   const results = []
 
   const letters = 'abcdefghijklmnopqrstuvwxyz'
+  
+  outer:
   for (const a of letters) {
     for (const b of letters) {
       const suffix = a + b
-      const url = `https://raw.githubusercontent.com/silencerkor/kdm-api/main/${prefix}_${suffix}`
+      const url = `https://raw.githubusercontent.com/${owner}/${repo}/main/${prefix}_${suffix}`
+      
       try {
-        const r = await fetch(url)
-        if (!r.ok) break
+        const r = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!r.ok) break outer
+        
         const text = await r.text()
         const lines = text.split('\n')
+        
         for (const line of lines) {
           if (line.toUpperCase().includes(nama_upper)) {
-            try { results.push(JSON.parse(line.replace(/,$/, ''))) } catch(e) {}
+            try {
+              results.push(JSON.parse(line.replace(/,$/, '')))
+            } catch(e) {}
           }
         }
-      } catch(e) { break }
-      if (results.length >= 10) break
+      } catch(e) {
+        break outer
+      }
+      
+      if (results.length >= 10) break outer
     }
-    if (results.length >= 10) break
   }
 
-  res.json({ status: 'success', total: results.length, data: results })
+  res.json({
+    status: 'success',
+    total: results.length,
+    data: results
+  })
 }
