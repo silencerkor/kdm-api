@@ -11,30 +11,13 @@ export default async function handler(req, res) {
   const prefix = type === 'pengurus' ? 'pengurus' : 'anggota'
   const results = []
 
-  // DEBUG
-  console.log('ENV CHECK:', { owner, repo, hasToken: !!token })
-  
-  const testUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${prefix}_aa`
-  console.log('TEST URL:', testUrl)
-  
-  try {
-    const testR = await fetch(testUrl, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    console.log('TEST STATUS:', testR.status)
-    const testText = await testR.text()
-    console.log('TEST BODY:', testText.substring(0, 300))
-  } catch(e) {
-    console.log('TEST ERROR:', e.message)
-  }
-
   const letters = 'abcdefghijklmnopqrstuvwxyz'
   
   outer:
   for (const a of letters) {
     for (const b of letters) {
       const suffix = a + b
-      const url = `https://raw.githubusercontent.com/${owner}/${repo}/main/${prefix}_${suffix}`
+      const url = `https://raw.githubusercontent.com/${owner}/${repo}/refs/heads/main/${prefix}_${suffix}`
       
       try {
         const r = await fetch(url, {
