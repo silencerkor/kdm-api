@@ -7,7 +7,6 @@ export default async function handler(req, res) {
   const nama_upper = nama.toUpperCase()
   const prefix = type === 'pengurus' ? 'pengurus' : 'anggota'
   const results = []
-  const errors = []
 
   const letters = 'abcdefghijklmnopqrstuvwxyz'
   
@@ -22,22 +21,23 @@ export default async function handler(req, res) {
         if (!r.ok) break outer
         
         const text = await r.text()
+        const lines = text.split('\n')
         
-        let data
-        try {
-          data = JSON.parse(text)
-        } catch(parseErr) {
-          errors.push({ file: `${prefix}_${suffix}`, error: parseErr.message, preview: text.substring(0, 100) })
-          break outer
-        }
-        
-        for (const item of data) {
-          if (item.name && item.name.toUpperCase().includes(nama_upper)) {
-            results.push(item)
+        let buffer = ''
+        for (const line of lines) {
+          buffer += line
+          if (line.trim() === '},' || line.trim() === '}') {
+            try {
+              const clean = buffer.trim().replace(/,$/, '')
+              const item = JSON.parse(clean)
+              if (item.name && item.name.toUpperCase().includes(nama_upper)) {
+                results.push(item)
+              }
+            } catch(e) {}
+            buffer = ''
           }
         }
       } catch(e) {
-        errors.push({ fetch_error: e.message })
         break outer
       }
       
@@ -48,7 +48,6 @@ export default async function handler(req, res) {
   res.json({
     status: 'success',
     total: results.length,
-    data: results,
-    errors
+    data: results
   })
 }
