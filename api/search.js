@@ -4,9 +4,6 @@ export default async function handler(req, res) {
   const { nama, type } = req.query
   if (!nama) return res.status(400).json({ error: 'nama required' })
 
-  const owner = process.env.GITHUB_OWNER
-  const repo = process.env.GITHUB_REPO
-  const token = process.env.GITHUB_TOKEN
   const nama_upper = nama.toUpperCase()
   const prefix = type === 'pengurus' ? 'pengurus' : 'anggota'
   const results = []
@@ -17,12 +14,10 @@ export default async function handler(req, res) {
   for (const a of letters) {
     for (const b of letters) {
       const suffix = a + b
-      const url = `https://raw.githubusercontent.com/${owner}/${repo}/refs/heads/main/${prefix}_${suffix}`
+      const url = `https://raw.githubusercontent.com/silencerkor/kdm-api/refs/heads/main/${prefix}_${suffix}`
       
       try {
-        const r = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const r = await fetch(url)
         if (!r.ok) break outer
         
         const data = await r.json()
